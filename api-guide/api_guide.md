@@ -308,22 +308,22 @@ YOUR_ACCESS_TOKEN' \
 ## Implementation Steps: Sequence Diagram
 ![Implementation Steps](images/implementation_steps_sequence_diagram.png)
 
-# Workflow Descriptions
+# Workflow 描述
 
 ### Workflow Definition Keys
 | definitionKey | Name                         | Description  |
 |---------------|------------------------------|--------------|
-| 1             | [ID Capture and Storage](workflow_descriptions.md#workflow-1-id-capture-and-storage)  | Captures a government-issued ID document and stores the extracted data. |  
-| 2             | [ID Verification](workflow_descriptions.md#workflow-2-id-verification)  | Verifies a government-issued ID document and returns a) whether that document is valid, and b) data extracted from that document. |  
-| 3             | [ID and Identity Verification](workflow_descriptions.md#workflow-3-id-and-identity-verification) | Verifies a photo ID document and returns a) whether that document is valid, and b) data extracted from that document. It also compares the user's face with the photo on the ID and performs a liveness check to ensure the person is physically present. |
-| 5             | [Similarity to existing ID](workflow_descriptions.md#workflow-5-similarity-to-existing-id) | Matches a selfie of a user to the face of a document holder of a stored ID document that has already been verified. |  
-| 6             | [Standalone Liveness](workflow_descriptions.md#workflow-6-standalone-liveness) | Captures a user's face to verify that the person is physically present and not presenting a photo or other fake as their selfie. |   
-| 9             | [Authentication](workflow_descriptions.md#workflow-9-authentication) | Compares the facemap of a user to an existing facemap that has already been captured. The existing facemap must have been acquired during a previous workflow, e.g. [Workflow 3](workflow_descriptions.md#workflow-3-id-and-identity-verification) or [Workflow 6](workflow_descriptions.md#workflow-6-standalone-liveness). |   
-| 16            | [Authentication on Premise](workflow_descriptions.md#workflow-16-authentication-on-premise) | Compares the facemap of a user to an existing facemap that was previously captured and is stored on the customer side. <br><br>  The existing facemap must have been acquired during a previous workflow, e.g. [Workflow 3](#workflow-3-id-and-identity-verification) or [Workflow 6](workflow_descriptions.md#workflow-6-standalone-liveness), and can be retrieved with the [Retrieval API](#retrieval) using the [`validFaceMapForAuthentication`](#capabilitiesliveness) parameter. |
-| 20            | [Similarity of Two Images](workflow_descriptions.md#workflow-20-similarity-of-two-images) | Matches the user photos on two IDs, two user selfies or a user's selfie with the photo on the ID to verify they are the same person. |
-| 32            | [ID Verification, Identity Verification, Screening](workflow_descriptions.md#workflow-32-id-verification-identity-verification-screening) | Verifies a photo ID document and returns a) whether that document is valid, and b) data extracted from that document. It also compares the user's face with the photo on the ID and performs a liveness check to ensure the person is physically present. Checks if user is part of any sanctions list. |
+| 1             | [ID Capture and Storage](workflow_descriptions.md#workflow-1-id-capture-and-storage)  | 采集政府签发的身份证件并存储提取的数据。 |  
+| 2             | [ID Verification](workflow_descriptions.md#workflow-2-id-verification)  | 验证政府签发的身份证明文件，并返回a）该文件是否有效，以及b）从该文件中提取的数据。 |  
+| 3             | [ID and Identity Verification](workflow_descriptions.md#workflow-3-id-and-identity-verification) | 验证一个有照片的ID文件，并返回a）该文件是否有效，以及b）从该文件中提取的数据。它还将用户的脸与身份证上的照片进行比较，并进行有效性检查，以确保该人真实存在。|
+| 5             | [Similarity to existing ID](workflow_descriptions.md#workflow-5-similarity-to-existing-id) | 将用户的自拍与已经验证过的存储身份证件的证件持有者的面部相匹配。|  
+| 6             | [Standalone Liveness](workflow_descriptions.md#workflow-6-standalone-liveness) | 采集用户面部数据，以验证该人是否真实存在，而不是以照片或其他假象作为其自拍。|   
+| 9             | [Authentication](workflow_descriptions.md#workflow-9-authentication) | 将用户的脸谱与已经捕获的现有脸谱进行比较。现有的脸谱必须是在以前的工作流程中获得的, e.g. [Workflow 3](workflow_descriptions.md#workflow-3-id-and-identity-verification) or [Workflow 6](workflow_descriptions.md#workflow-6-standalone-liveness). |   
+| 16            | [Authentication on Premise](workflow_descriptions.md#workflow-16-authentication-on-premise) | 将用户的脸谱与先前捕获并存储在客户方的现有脸谱进行比较。现有的脸谱必须是在以前的工作流程中获得的, e.g. [Workflow 3](#workflow-3-id-and-identity-verification) or [Workflow 6](workflow_descriptions.md#workflow-6-standalone-liveness), 并可以用 [Retrieval API](#retrieval) using the [`validFaceMapForAuthentication`](#capabilitiesliveness) parameter. |
+| 20            | [Similarity of Two Images](workflow_descriptions.md#workflow-20-similarity-of-two-images) | 将两个ID上的用户照片、两张用户自拍或一个用户的自拍与ID上的照片相匹配，以验证他们是同一个人。 |
+| 32            | [ID Verification, Identity Verification, Screening](workflow_descriptions.md#workflow-32-id-verification-identity-verification-screening) | 验证一个有照片的ID文件，并返回a）该文件是否有效，以及b）从该文件中提取的数据。它还将用户的脸与身份证上的照片进行比较，并进行有效性检查以确保该人实际存在。检查用户是否是任何制裁名单的一部分。 |
 
-Workflows are specified using the `key` attribute in the `workflowDefinition` object:
+Workflows 是使用 "workflowDefinition "对象中的 "key "属性指定的。
 ```
 "workflowDefinition": {
     "key": DEFINITION_KEY,
@@ -331,12 +331,14 @@ Workflows are specified using the `key` attribute in the `workflowDefinition` ob
 }
 ```
 
-# Data Acquisition
+# 数据采集
+
+## Web
+用iframe 或者 redirect的形式呈现给最终用户
+https://github.com/JumioAPAC/implementation-guide.zh_cn/blob/main/api-guide/transition-guide-web.md#embedding-in-an-iframe
 
 ## SDK
-This section illustrates how to implement the SDK.
-
-After creating/updating a new account you will receive a `sdk.token` (JWT) for initializing the SDK. Use this token with your Android or iOS code.
+按照上面提到的账户创建或者更新请求，获取唯一的SDK token
 
 ### Android
 ```
@@ -370,15 +372,12 @@ sdk.dataCenter = jumioDataCenter
 For more information on how to use the Jumio Mobile SDK please refer to our mobile guides for [iOS](https://github.com/Jumio/mobile-sdk-ios) and [Android](https://github.com/Jumio/mobile-sdk-android).
 
 ## API
-This section illustrates how to implement the API.
-
-After creating/updating a new account, you receive one or more specific redirect URL(s).
 
 ### Request
 
-#### Request Headers
+#### 请求头
 
-The following fields are required in the header section of your Request
+需要填写以下内容
 
 `Accept: application/json`    
 `Content-Type: multipart/form-data`   
@@ -434,7 +433,7 @@ Successful requests will return HTTP status code __200 OK__ along with a JSON ob
 | api.parts                     | object         | href to manage parts for the account credential<br>Possible values:<br>•	FRONT<br>• BACK<br>• FACE <br>• FACEMAP |
 | api.workflowExecution         | string         | href to manage the acquisition and workflow processing                                                  |
 
-### Examples
+### 请求样式
 ```
 {
     "timestamp": "2021-03-05T13:17:49.042Z",
