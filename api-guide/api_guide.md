@@ -1,23 +1,22 @@
-# Introduction
-The Jumio KYX Platform API allows you to manage your user journeys. It allows you to create and update accounts for your users, prompt them to provide data such as a photo ID and selfie, and get identity verification results in real time so you can complete their onboarding.
+# Jumio KYX
 
-The KYX Platform API is user-based and highly flexible, allowing various workflows that can be easily combined into a single user journey. Each workflow defines a single transaction executing a series of specific tasks, such as data extraction and a liveness check. Multiple workflows can be executed on the same account. Your workflows can execute functionality from several Jumio products, including:
+Jumio KYX平台的API允许你管理你的用户旅程。它允许你为你的用户创建和更新账户，提示他们提供数据，如身份证照片和自拍，并实时获得身份验证结果，以便你能完成他们的入职培训。
 
-* ID Verification: Is this photo ID valid?
-* Identity Verification: Is this person who they say they are?
+KYX平台的API以用户为基础，高度灵活，允许各种工作流程，可以很容易地组合成一个用户旅程。每个工作流程都定义了一个执行一系列特定任务的单一事务，如数据提取和有效性检查。多个工作流程可以在同一个账户上执行。你的工作流程可以执行几个Jumio产品的功能，包括。
 
-The following diagram shows several possible workflows:
+* 身份证验证。这个带照片的身份证是否有效？
+* 身份验证。这个人是证件上的那个人吗？
+
+下图显示了几种可能的工作流程：
 
 ![Workflow Overview](images/workflow_overview.png)
 
-| ℹ️&nbsp;&nbsp; Some functionalities described in this document might be unavailable, depending on the scope of your license with Jumio. Contact your Jumio Solutions Engineer if you have any questions.
-|:----------|
 
-### Implementation Steps
-1. Account Creation
-2. Account Update
-3. Data Acquisition
-4. Finalization
+### 具体步骤
+1. 账户创建
+2. 帐户更新
+3. 数据采集
+4. 最终确定
 
 ## Table of Contents
 - [Authentication and Encryption](#authentication-and-encryption)
@@ -62,74 +61,56 @@ The following diagram shows several possible workflows:
     - [Account Deletion](#account-deletion)
     - [Workflow Deletion](#workflow-deletion)
 
-# Authentication and Encryption
-API calls are protected using either HTTP Basic Authentication or OAuth2.
+# 认证和加密
+目前API调用支持使用的方式有HTTP基本认证或OAuth2。可以通过门户网站customer-portal获取相对应的凭证和密钥。
 
-| ⚠️&nbsp;&nbsp; Never share your API token, API secret, or OAuth2 credentials with anyone — not even Jumio Support!
-|:----------|
-
-The Account Management Service initiates the acquisition process and returns:
-
-* either a JSON Web Token (JWT), which can be used to authenticate to the Jumio backend system to use with the SDK
-* or Redirect-URLs, which can be used to upload documents using the other channels
-
-At the moment, your Basic Auth credentials are constructed using your API token as the User ID and your API secret as the password. You can view and manage your API token and secret in the Customer Portal under:
+HTTP基本认证：
 * __Settings > API credentials > API Users__
 
-## OAuth2
-Your new OAuth2 credentials are constructed using your API token as the Client ID and your API secret as the Client secret. You can view and manage your API token and secret in the Customer Portal under:
+Oauth2认证
 * __Settings > API credentials > OAuth2 Clients__
 
-Client ID and Client secret are used to generate an OAuth2 access token. OAuth2 has to be activated for your account. Contact your Jumio Account Manager for activation.
-
-### Access Token URL (OAuth2)
+### OAuth2 Token 获取地址
 * US: `https://auth.amer-1.jumio.ai/oauth2/token`
 * EU: `https://auth.emea-1.jumio.ai/oauth2/token`
 * SG: `https://auth.apac-1.jumio.ai/oauth2/token`
 
-The [TLS Protocol](https://tools.ietf.org/html/rfc5246) is required to securely transmit your data, and we strongly recommend using the latest version. For information on cipher suites supported by Jumio during the TLS handshake see [supported cipher suites](https://github.com/Jumio/implementation-guides/blob/master/netverify/supported-cipher-suites.md).
+## 申请Oauth2 Token模板
 
-| ℹ️&nbsp;&nbsp; Calls with missing, incorrect or suspicious headers or parameter values will result in HTTP status code __400 Bad Request Error__ or __403 Forbidden__
-|:----------|
-
-## Examples
-
-### Request Access Token
 ```
-curl --request POST --location 'https://auth.amer-1.jumio.ai/oauth2/token' \
+curl --request POST --location 'https://auth.apac-1.jumio.ai/oauth2/token' \
     --header 'Accept: application/json' \
     --header 'Content-Type: application/x-www-form-urlencoded' \
     --data-raw 'grant_type=client_credentials' \
     --basic --user CLIENT_ID:CLIENT_SECRET
 ```
 
-### Response
+### 服务器回应
 ```
 {
-  "access_token": "YOUR_ACCESS_TOKEN",
+  "access_token": "YOUR_ACCESS_TOKEN", 《-- 这个就是你的access token，可以用来申请创建和更新用户信息。
   "expires_in": 3600,
   "token_type": "Bearer"
 }
 ```
 
-## Access Token Timeout
-Your OAuth2 access token is valid for 60 minutes. After the token lifetime is expired, it is necessary to [generate a new access token.](#authentication-and-encryption)
+## Oauth2 超时限制
+你的OAuth2访问令牌的有效期为**60分钟**。在令牌的有效期过后，需要重新创建新的token [generate a new access token.](#authentication-and-encryption)
 
-## Workflow Transaction Token Timeout
-The token lifetime is set to 30 minutes per default. It can be configured via the [Jumio Customer Portal](https://github.com/Jumio/implementation-guides/blob/master/netverify/portal-settings.md) and can be overwritten using the API call (`tokenLifetime`). Within this token lifetime the token can be used to initialize the SDK, API or Web journey.
+## Workflow 交易超时
+当你申请一个workflow时，需要用Oauth2或者HTTP基本认证的方式创建一个workflow交易的token，默认情况下，时限设置为30分钟。 可以通过更改customer-portal 里面的tokenLifetime 来自定义时长。 在这个有效期内，这个workflow 交易的token可用于初始化SDK、API或Web三种方式。
 
-As soon as the workflow (transaction) starts, a 15 minutes session timeout starts. For each action performed (capture image, upload image) the session timeout will reset, and the 15 minutes will start again.
+一旦工作流程（交易）开始，15分钟的会话超时就开始了。每执行一个动作（捕捉图像、上传图像），会话超时就会重置，15分钟就会重新开始。
 
-# Account Creation
-Create a new account for your end user by using the following API endpoint and below mentioned request headers and request body:
+# 账户创建
+通过使用以下API端点和下面提到的请求头和请求正文，为你的最终用户创建一个新的账户。
 
 HTTP Request Method: __POST__
 * US: `https://account.amer-1.jumio.ai/api/v1/accounts`
 * EU: `https://account.emea-1.jumio.ai/api/v1/accounts`
 * SG: `https://account.apac-1.jumio.ai/api/v1/accounts`
 
-## Request Headers
-The following fields are required in the header section of your Request
+## 请求头样式
 
 `Accept: application/json`   
 `Content-Type: application/json`    
@@ -143,16 +124,16 @@ The following fields are required in the header section of your Request
 | ℹ️&nbsp;&nbsp; Calls with missing or suspicious headers, suspicious parameter values, or without OAuth2 will result in HTTP status code __403 Forbidden__
 |:----------|
 
-## Request Body
-The body of your initiate API request allows you to:
+## 请求体
+你发起的API请求的主体允许你。
 
-* provide your own internal tracking information for the user and transaction.
-* specify what user information is captured and by which method.
-* preset options to enhance the user journey.
+* 为用户和交易提供你自己的内部跟踪信息。
+*指定捕获哪些用户信息，用什么方法。
+*预设选项以加强用户旅程。
 
-Values set in your API request will override the corresponding settings configured in the Customer Portal.
+在你的API请求中设置的值将覆盖在客户门户中配置的相应设置。
 
-(Mandatory parameters in bold.)
+(加粗为必填项)
 
 | Parameter                      | Type           | Max. Length           | Notes          |
 |--------------------------------|----------------|-----------------------|----------------|
@@ -182,9 +163,9 @@ Values set in your API request will override the corresponding settings configur
 | type.values            | array (string) | See possible values. | Defined number of credential type codes. <br>Possible values:<br>If `category` = ID:<br>• ID_CARD<br>• DRIVING_LICENSE<br>• PASSPORT<br>• VISA<br>If `category` = FACEMAP:<br>• IPROOV_STANDARD (Web + SDK channel only)<br>• IPROOV_PREMIUM (Workflow 3: ID and Identity Verification (Web + SDK channel only) / Workflow 9: Authentication (SDK only) / Workflow 16: Authentication on Premise (SDK only))<br>• JUMIO_STANDARD|
 
 ## Response
-Unsuccessful requests will return HTTP status code __400 Bad Request, 401 Unauthorized, 403 Forbidden__ or __404 Not Found__ (in case of a failed update scenario) if the scan is not available.
+不成功的请求将返回HTTP状态代码__400 Bad Request, 401 Unauthorized, 403 Forbidden__或__404 Not Found__（在更新失败的情况下）
 
-Successful requests will return HTTP status code __200 OK__ along with a JSON object containing the information described below.
+成功的请求将返回HTTP状态代码__200 OK__以及一个包含下述信息的JSON对象。
 
 | Parameter                     | Type           | Notes                                                                     |
 |-------------------------------|----------------|---------------------------------------------------------------------------|
@@ -214,11 +195,9 @@ Successful requests will return HTTP status code __200 OK__ along with a JSON ob
 | api.parts             | object                  | href to manage parts for the account credential<br>Possible values:<br>• FRONT<br>•	BACK<br>• FACE<br>• FACEMAP <br><br> _API parameters are only relevant for the API channel._ |
 | api.workflowExecution | string                  | href to manage the acquisition and workflow processing <br><br>_API parameters are only relevant for the API channel._ |
 
-## Examples
-
-### Initiate Account
+### 初始化账号请求样式
 ```
-curl --request POST --location 'https://account.amer-1.jumio.ai/api/v1/accounts' \
+curl --request POST --location 'https://account.apac-1.jumio.ai/api/v1/accounts' \
     --header 'Content-Type: application/json' \
     --header 'User-Agent: User Demo' \
     --header 'Authorization: Bearer
@@ -244,10 +223,10 @@ curl --request POST --location 'https://account.amer-1.jumio.ai/api/v1/accounts'
     }'
 ```
 
-# Account Update
-After you have [created an account](#account-creation) for an end user, you can use this API to update that account. You will use this API endpoint for every new workflow (transaction) you need to initialize for that end user.
+# 账号更新请求
+在你为一个终端用户[创建了一个账户](#account-creation)之后，你可以使用这个API来更新该账户。你将对你需要为该终端用户初始化的每一个新的工作流（事务）使用这个API端点。
 
-Updating an account is very similar to creating one; the request headers and body are the same in both cases. The difference is that you pass the `accountId` to the endpoint and use PUT instead of POST.
+更新账户与创建账户非常相似；两种情况下的请求头和正文都是一样的。不同的是，你把 "accountId "传给端点，并使用PUT而不是POST。
 
 ## Request
 HTTP Request Method: __PUT__
@@ -255,20 +234,9 @@ HTTP Request Method: __PUT__
 * EU: `https://account.emea-1.jumio.ai/api/v1/accounts/<accountId>`
 * SG: `https://account.apac-1.jumio.ai/api/v1/accounts/<accountId>`
 
-### Request Headers
-Please refer to [Account Create section.](#request-headers)
-
-### Request Body
-Please refer to [Account Create section.](#request-body)
-
-## Response
-Please refer to [Account Create section.](#response)
-
-## Examples
-
-### Request
+### 账号更新请求样式
 ```
-curl --location --request PUT 'https://account.amer-1.jumio.ai/api/v1/accounts/<accountId>' \
+curl --location --request PUT 'https://account.apac-1.jumio.ai/api/v1/accounts/<accountId>' \
 --header 'Content-Type: application/json' \
 --header 'User-Agent: User Demo' \
 --header 'Authorization: Bearer
@@ -298,7 +266,7 @@ YOUR_ACCESS_TOKEN' \
 }
 ```
 
-### Response
+### 服务器回应
 ```
 {
     "timestamp": "2021-05-28T09:17:50.240Z",
@@ -306,12 +274,12 @@ YOUR_ACCESS_TOKEN' \
         "id": "11111111-1111-1111-1111-aaaaaaaaaaaa"
     },
     "web": {
-        "href": "https://mycompany.web.amer-1.jumio.ai/web/v4/app?authorizationTokenxxx&locale=es",
+        "href": "https://mycompany.web.amer-1.jumio.ai/web/v4/app?authorizationTokenxxx&locale=es",  **《-- web 链接**
         "successUrl": "https://www.yourcompany.com/success",
         "errorUrl": "https://www.yourcompany.com/error"
     },
     "sdk": {
-        "token": "xxx"
+        "token": "xxx"   **《-- SDK token**
     },
     "workflowExecution": {
         "id": "22222222-2222-2222-2222-aaaaaaaaaaaa",
@@ -327,7 +295,7 @@ YOUR_ACCESS_TOKEN' \
                 "api": {
                     "token": "xxx",
                     "parts": {
-                        "front": "https://api.amer-1.jumio.ai/api/v1/accounts/11111111-1111-1111-1111-aaaaaaaaaaaa/workflow-executions/22222222-2222-2222-2222-aaaaaaaaaaaa/credentials/33333333-3333-3333-aaaaaaaaaaaa/parts/FRONT",
+                        "front": "https://api.amer-1.jumio.ai/api/v1/accounts/11111111-1111-1111-1111-aaaaaaaaaaaa/workflow-executions/22222222-2222-2222-2222-aaaaaaaaaaaa/credentials/33333333-3333-3333-aaaaaaaaaaaa/parts/FRONT",     **《-- API 链接**
                         "back": "https://api.amer-1.jumio.ai/api/v1/accounts/11111111-1111-1111-1111-aaaaaaaaaaaa/workflow-executions/22222222-2222-2222-2222-aaaaaaaaaaaa/credentials/33333333-3333-3333-aaaaaaaaaaaa/parts/BACK"
                     },
                     "workflowExecution": "https://api.amer-1.jumio.ai/api/v1/accounts/11111111-1111-1111-1111-aaaaaaaaaaaa/workflow-executions/22222222-2222-2222-2222-aaaaaaaaaaaa"
@@ -806,7 +774,7 @@ dependencies {
 class WebViewFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState);
-​
+
         webview.settings.javaScriptEnabled = true;
         webview.settings.allowFileAccessFromFileURLs = true;
         webview.settings.allowFileAccess = true;
@@ -815,12 +783,12 @@ class WebViewFragment : Fragment() {
         webview.settings.javaScriptCanOpenWindowsAutomatically = true;
         webview.settings.mediaPlaybackRequiresUserGesture = false;
         webview.settings.domStorageEnabled = true;
-​
+
         /**
          *  Registering handler for postMessage communication (iFrame logging equivalent - optional)
          */
         webview.addJavascriptInterface(new PostMessageHandler(), "__NVW_WEBVIEW_HANDLER__");
-​
+
         /**
          *  Embedding necessary script execution fragment, before NVW4 initialize (important)
          */
@@ -829,7 +797,7 @@ class WebViewFragment : Fragment() {
                 webview.loadUrl("javascript:(function() { window['__NVW_WEBVIEW__']=true})")
             }
         }
-​
+
         /**
          * Handling permissions request
          */
@@ -926,7 +894,7 @@ class WebViewFragment : Fragment() {
 
 	webview.loadUrl("<<NVW4 SCAN REF LINK>>")
     }
-​
+
     /**
      *  PostMessage handler for iframe logging equivalent (optional)
      */
@@ -980,7 +948,7 @@ Make sure that camera permissions are granted.
 import AVFoundation
 import SafariServices
 import UIKit
-​
+
 class ViewController: UIViewController {
 
     @IBAction func loadButton(_ sender: Any) {
@@ -994,7 +962,7 @@ class ViewController: UIViewController {
         guard let URL = URL(string: stringURL) else {
             return
         }
-​
+
         let safariVC = SFSafariViewController(url: URL)
         present(safariVC, animated: true)
     }
@@ -1043,20 +1011,20 @@ Register a postMessage handler and put the relevant code sections in the `userCo
 ```swift
 class ViewController: UIViewController {
     @IBOutlet weak var webView: WKWebView!
-​
+
     override func viewDidLoad() {
         super.viewDidLoad()
         webView.navigationDelegate = self;
-​
+
         /**
          *  Registering handler for postMessage communication (iFrame logging equivalent - optional)
          */
         webView.configuration.userContentController.add(self, name: "__NVW_WEBVIEW_HANDLER__")
-​
+
         webView.load( URLRequest("<<NVW4 SCAN REF LINK>>"));
     }
 }
-​
+
 extension ViewController: WKNavigationDelegate {
     /**
      *  Embedding script at very beginning, before NVW4 initialize (important)
@@ -1073,7 +1041,7 @@ extension ViewController: WKNavigationDelegate {
         };
     }
 }
-​
+
 extension ViewController: WKScriptMessageHandler {
     /**
      *  PostMessage handler for iframe logging equivalent (optional)
